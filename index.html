@@ -55,15 +55,13 @@
         const boids = [];
         const numBoids = 150;
 
-        // System Parameters for Stable Equilibrium (Deutlich verlangsamt)
         const visualRange = 60;
-        const speedLimit = 1.2; // Halbe Maximalgeschwindigkeit für elegante Bewegungen
+        const speedLimit = 1.2; // Schön langsame, ruhige Bewegung
 
         class Boid {
             constructor() {
                 this.x = Math.random() * canvas.width;
                 this.y = Math.random() * canvas.height;
-                // Sanfterer Start
                 this.dx = (Math.random() - 0.5) * 1; 
                 this.dy = (Math.random() - 0.5) * 1;
             }
@@ -120,7 +118,7 @@
             }
 
             keepWithinBounds() {
-                const margin = 50; const turnFactor = 0.05; // Weicheres Abprallen am Rand
+                const margin = 50; const turnFactor = 0.05; 
                 if (this.x < margin) this.dx += turnFactor;
                 if (this.x > canvas.width - margin) this.dx -= turnFactor;
                 if (this.y < margin) this.dy += turnFactor;
@@ -138,22 +136,14 @@
             }
 
             draw() {
-                // Farb-Verlauf basierend auf der Position (Blau zu Cyan/Teal)
                 const hue = (this.x / canvas.width) * 60 + 180; 
 
                 ctx.beginPath();
-                // Zeichnet perfekte Kreise (Punkte) statt Pfeile
+                // Zeichnet reine, perfekte Punkte
                 ctx.arc(this.x, this.y, 2.5, 0, Math.PI * 2);
                 
-                // Sanftes Leuchten hinzufügen
                 ctx.fillStyle = `hsl(${hue}, 80%, 60%)`;
-                ctx.shadowBlur = 6;
-                ctx.shadowColor = `hsl(${hue}, 80%, 60%)`;
-                
                 ctx.fill();
-                
-                // Schatten für den nächsten Frame zurücksetzen (wichtig für die Performance)
-                ctx.shadowBlur = 0;
             }
         }
 
@@ -163,8 +153,8 @@
         }
 
         function animate() {
-            // Motion Trail Effekt: Macht die langsame Bewegung noch fließender
-            ctx.fillStyle = 'rgba(2, 2, 3, 0.2)';
+            // Solides Überschreiben des Hintergrunds: Verhindert jeglichen Schweif/Spermien-Effekt
+            ctx.fillStyle = '#020203';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             for (let boid of boids) {
