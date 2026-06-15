@@ -46,38 +46,78 @@
     <h1>STABLE STATE SIMULATOR</h1>
     <p>An exploration of Directed Emergence. Autonomous agents utilize localized feedback loops to self-organize. Eventually, the systemic gravity pulls the swarm into a globally recognized geometric attractor state of equilibrium.</p>
     
-    <canvas id="swarmCanvas" width="850" height="500"></canvas>
+    <canvas id="c" width="850" height="500"></canvas>
 
     <script>
-        const canvas = document.getElementById('swarmCanvas');
+        const canvas = document.getElementById('c');
         const ctx = canvas.getContext('2d');
+        
+        // 1. Die Zielkoordinaten für das Peace-Zeichen berechnen
+        const targets = [];
+        const cx = 425; // Mitte von 850
+        const cy = 250; // Mitte von 500
+        const R = 130;  // Radius
 
-        // Die unsichtbare Matrix für das Peace-Zeichen
-        function createAttractorNodes() {
-            const targets = [];
-            const cx = 850 / 2; // Exakte Canvas-Mitte
-            const cy = 500 / 2;
-            const R = 130; 
-
-            // Äußerer Kreis
-            for(let i=0; i<80; i++) {
-                let a = (i/80) * Math.PI * 2;
-                targets.push({x: cx + R*Math.cos(a), y: cy + R*Math.sin(a)});
-            }
-            // Vertikale Mittellinie
-            for(let i=0; i<30; i++) {
-                targets.push({x: cx, y: cy - R + (i/29)*2*R});
-            }
-            // Linke Diagonale
-            for(let i=0; i<20; i++) {
-                targets.push({x: cx - (i/19)*R*0.707, y: cy + (i/19)*R*0.707});
-            }
-            // Rechte Diagonale
-            for(let i=0; i<20; i++) {
-                targets.push({x: cx + (i/19)*R*0.707, y: cy + (i/19)*R*0.707});
-            }
-            return targets;
+        // Kreis außen (60 Punkte)
+        for(let i=0; i<60; i++) {
+            targets.push({
+                x: cx + R * Math.cos((i/60) * Math.PI * 2), 
+                y: cy + R * Math.sin((i/60) * Math.PI * 2)
+            });
+        }
+        // Linie Mitte (25 Punkte)
+        for(let i=0; i<25; i++) {
+            targets.push({x: cx, y: cy - R + (i/24) * 2 * R});
+        }
+        // Diagonale links (15 Punkte)
+        for(let i=0; i<15; i++) {
+            targets.push({x: cx - (i/14) * R * 0.707, y: cy + (i/14) * R * 0.707});
+        }
+        // Diagonale rechts (15 Punkte)
+        for(let i=0; i<15; i++) {
+            targets.push({x: cx + (i/14) * R * 0.707, y: cy + (i/14) * R * 0.707});
         }
 
-        const attractorNodes = createAttractorNodes
-        
+        // 2. Die fliegenden Punkte (Boids) erstellen
+        const boids = [];
+        for(let i=0; i<targets.length; i++) {
+            boids.push({
+                x: Math.random() * 850,
+                y: Math.random() * 500,
+                vx: (Math.random() - 0.5) * 4,
+                vy: (Math.random() - 0.5) * 4,
+                tx: targets[i].x,  // Jeder Punkt merkt sich sein Ziel im Peace-Zeichen
+                ty: targets[i].y
+            });
+        }
+
+        let frame = 0;
+
+        // 3. Die Animations-Schleife
+        function draw() {
+            frame++;
+            
+            // Hintergrund mit leichtem Schweif-Effekt zeichnen
+            ctx.fillStyle = 'rgba(2, 2, 3, 0.3)';
+            ctx.fillRect(0, 0, 850, 500);
+
+            // Ab Frame 100 (ca. 2 Sekunden) fängt das Peace-Zeichen an zu ziehen
+            let force = 0;
+            if (frame > 100) {
+                force = (frame - 100) * 0.0002;
+                if (force > 0.03) force = 0.03; // Sogkraft begrenzen, damit es geschmeidig bleibt
+            }
+
+            ctx.fillStyle = '#00d2ff'; // Leuchtendes Cyan
+
+            // Jeden Punkt bewegen und zeichnen
+            for(let i=0; i<boids.length; i++) {
+                let p = boids[i];
+
+                if(force > 0) {
+                    // Zum Ziel ziehen
+                    p.vx += (p.tx - p.x) * force;
+                    p.vy += (p.ty - p.y) * force;
+                } else {
+                    // Freies Schwärmen am Anfang
+                    p.vx +=
