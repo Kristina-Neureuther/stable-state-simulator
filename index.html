@@ -82,8 +82,9 @@
             boids.push({
                 x: Math.random() * 850,
                 y: Math.random() * 500,
-                vx: (Math.random() - 0.5) * 4,
-                vy: (Math.random() - 0.5) * 4,
+                // Extrem verlangsamte Startgeschwindigkeit
+                vx: (Math.random() - 0.5) * 1.5,
+                vy: (Math.random() - 0.5) * 1.5,
                 hue: Math.floor(Math.random() * 360), 
                 target: targets[i] 
             });
@@ -117,9 +118,10 @@
 
                 // === PHASE 1: CHAOS ===
                 if (frameCount < 150) {
-                    p.vx += (Math.random() - 0.5) * 1;
-                    p.vy += (Math.random() - 0.5) * 1;
-                    limitSpeed(p, 3);
+                    // Kaum noch zusätzliche Beschleunigung pro Frame
+                    p.vx += (Math.random() - 0.5) * 0.3;
+                    p.vy += (Math.random() - 0.5) * 0.3;
+                    limitSpeed(p, 1.2); // Radikal reduziertes Tempolimit
                     bounce(p);
                 } 
                 // === PHASE 2: SCHWARM ===
@@ -137,38 +139,40 @@
                             count++;
                             
                             if (distSq < 400) {
-                                p.vx += (p.x - other.x) * 0.01;
-                                p.vy += (p.y - other.y) * 0.01;
+                                p.vx += (p.x - other.x) * 0.005;
+                                p.vy += (p.y - other.y) * 0.005;
                             }
                         }
                     }
                     
                     if (count > 0) {
                         cx /= count; cy /= count; vx /= count; vy /= count;
-                        p.vx += (cx - p.x) * 0.01;
-                        p.vy += (vx - p.vx) * 0.05;
+                        // Anziehungskräfte im Schwarm halbiert
+                        p.vx += (cx - p.x) * 0.005;
+                        p.vy += (vx - p.vx) * 0.02;
                     }
-                    limitSpeed(p, 2.5);
+                    limitSpeed(p, 1.0); // Schwarm bewegt sich generell langsamer
                     bounce(p);
                 } 
-                // === PHASE 3: DAS HERZ (Sanfter Übergang) ===
+                // === PHASE 3: DAS HERZ ===
                 else {
                     let framesInHeartPhase = frameCount - 350;
                     
                     let dx = p.target.x - p.x;
                     let dy = p.target.y - p.y;
                     
-                    // Der "Magnet" fängt bei 0 an und wird extrem langsam stärker (Maximal 0.01)
-                    let pull = Math.min(0.01, framesInHeartPhase * 0.00005);
+                    // Magnet zieht viel sanfter an (Maximalwert von 0.01 auf 0.003 reduziert)
+                    let pull = Math.min(0.003, framesInHeartPhase * 0.00002);
                     p.vx += dx * pull; 
                     p.vy += dy * pull;
                     
-                    // Die Bremse fängt auch fast unmerklich an und steigert sich sanft
-                    let friction = Math.max(0.88, 1 - (framesInHeartPhase * 0.0005));
+                    // Reibung greift weicher
+                    let friction = Math.max(0.92, 1 - (framesInHeartPhase * 0.0002));
                     p.vx *= friction; 
                     p.vy *= friction;
 
-                    // Damit sie am Anfang der Herzphase nicht aus dem Bild fliegen
+                    limitSpeed(p, 1.2); // Absolutes Limit auch während der Herz-Zusammensetzung
+
                     if (framesInHeartPhase < 150) {
                         bounce(p);
                     }
@@ -190,3 +194,4 @@
     </script>
 </body>
 </html>
+                        
