@@ -5,7 +5,7 @@
     <title>Stable State Simulator</title>
     <style>
         body {
-            background-color: #08080a;
+            background-color: #050507;
             color: #f3f4f6;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             display: flex;
@@ -19,125 +19,60 @@
         h1 { 
             margin-bottom: 5px; 
             font-weight: 300; 
-            letter-spacing: 5px; 
+            letter-spacing: 4px; 
             font-size: 1.6em;
             color: #ffffff;
+            text-transform: uppercase;
         }
         p { 
-            color: #52525b; 
+            color: #6b7280; 
             margin-bottom: 30px; 
             font-size: 0.85em; 
             text-align: center; 
-            max-width: 550px;
+            max-width: 600px;
             line-height: 1.6;
             letter-spacing: 0.5px;
         }
         canvas {
-            border: 1px solid rgba(255,255,255,0.03);
-            border-radius: 12px;
-            box-shadow: 0 30px 60px rgba(0,0,0,0.6);
-            background: #010102;
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 8px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+            background: #020203;
         }
     </style>
 </head>
 <body>
 
     <h1>STABLE STATE SIMULATOR</h1>
-    <p>A systemic design model. Isolated components drift in high entropy. Through continuous interaction, proximity, and structural symbiosis, the network self-organizes into a resilient, dynamic equilibrium.</p>
+    <p>An exploration of Emergent Systems. Autonomous agents utilize localized feedback loops (alignment, cohesion, separation) to self-organize from chaos into a highly resilient, fluid macro-structure.</p>
     
-    <canvas id="stableCanvas" width="800" height="500"></canvas>
+    <canvas id="swarmCanvas" width="850" height="500"></canvas>
 
     <script>
-        const canvas = document.getElementById('stableCanvas');
+        const canvas = document.getElementById('swarmCanvas');
         const ctx = canvas.getContext('2d');
 
-        const particles = [];
-        const numParticles = 80; 
-        const connectionDist = 120; 
+        const boids = [];
+        const numBoids = 150;
 
-        class Particle {
+        // System Parameters for Stable Equilibrium
+        const visualRange = 60;
+        const speedLimit = 2.5;
+
+        class Boid {
             constructor() {
                 this.x = Math.random() * canvas.width;
                 this.y = Math.random() * canvas.height;
-                // Safe ultra-slow motion speed
-                this.vx = (Math.random() - 0.5) * 0.3;
-                this.vy = (Math.random() - 0.5) * 0.3;
-                this.hue = Math.floor(Math.random() * 360);
-                this.radius = 3;
-                this.connections = 0; 
+                this.dx = (Math.random() - 0.5) * 2;
+                this.dy = (Math.random() - 0.5) * 2;
             }
 
-            update() {
-                this.x += this.vx;
-                this.y += this.vy;
-
-                // Bounce bounds
-                if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
-                if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
-
-                this.connections = 0;
+            distance(other) {
+                return Math.sqrt((this.x - other.x) ** 2 + (this.y - other.y) ** 2);
             }
 
-            draw() {
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius + (this.connections * 0.5), 0, Math.PI * 2);
-                // Fail-safe color fallback if math fails
-                let finalHue = isNaN(this.hue) ? 190 : Math.floor(this.hue);
-                ctx.fillStyle = `hsl(${finalHue}, 85%, 60%)`;
-                ctx.fill();
-            }
-        }
-
-        // Initialize node grid
-        for (let i = 0; i < numParticles; i++) {
-            particles.push(new Particle());
-        }
-
-        function simulateNetwork() {
-            // Clean black background wipe
-            ctx.fillStyle = '#010102';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Update all node coordinates
-            for (let i = 0; i < particles.length; i++) {
-                particles[i].update();
-            }
-
-            // Calculate connections and draw system synergy lines
-            for (let i = 0; i < particles.length; i++) {
-                let p1 = particles[i];
-
-                for (let j = i + 1; j < particles.length; j++) {
-                    let p2 = particles[j];
-
-                    let dx = p1.x - p2.x;
-                    let dy = p1.y - p2.y;
-                    let dist = Math.sqrt(dx * dx + dy * dy);
-
-                    if (dist < connectionDist) {
-                        p1.connections++;
-                        p2.connections++;
-
-                        // Visual link representing system integration
-                        let alpha = (1 - dist / connectionDist) * 0.2;
-                        ctx.beginPath();
-                        ctx.moveTo(p1.x, p1.y);
-                        ctx.lineTo(p2.x, p2.y);
-                        
-                        let lineHue = isNaN(p1.hue) ? 190 : Math.floor(p1.hue);
-                        ctx.strokeStyle = `hsla(${lineHue}, 85%, 60%, ${alpha})`;
-                        ctx.lineWidth = 1;
-                        ctx.stroke();
-                    }
-                }
-
-                p1.draw();
-            }
-
-            requestAnimationFrame(simulateNetwork);
-        }
-
-        simulateNetwork();
-    </script>
-</body>
-</html>
+            flyTowardsCenter(boids) {
+                let centerX = 0; let centerY = 0; let numNeighbors = 0;
+                for (let other of boids) {
+                    if (this.distance(other) < visualRange) {
+                        centerX += other.x; centerY +=
