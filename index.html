@@ -52,42 +52,32 @@
         const canvas = document.getElementById('swarmCanvas');
         const ctx = canvas.getContext('2d');
 
-        const boids = [];
-        const numBoids = 150; 
-        let frameCount = 0;
-
-        // System Parameters
-        const visualRange = 60;
-        const speedLimit = 2.0;
-
-        // Generate the invisible Attractor Matrix (Peace Sign Geometry)
+        // Die unsichtbare Matrix für das Peace-Zeichen
         function createAttractorNodes() {
             const targets = [];
-            const cx = canvas.width / 2;
-            const cy = canvas.height / 2;
+            const cx = 850 / 2; // Exakte Canvas-Mitte
+            const cy = 500 / 2;
             const R = 130; 
 
-            // Outer Circle (80 nodes)
+            // Äußerer Kreis
             for(let i=0; i<80; i++) {
                 let a = (i/80) * Math.PI * 2;
                 targets.push({x: cx + R*Math.cos(a), y: cy + R*Math.sin(a)});
             }
-            // Vertical Center Line (30 nodes)
+            // Vertikale Mittellinie
             for(let i=0; i<30; i++) {
                 targets.push({x: cx, y: cy - R + (i/29)*2*R});
             }
-            // Left Diagonal (20 nodes)
+            // Linke Diagonale
             for(let i=0; i<20; i++) {
                 targets.push({x: cx - (i/19)*R*0.707, y: cy + (i/19)*R*0.707});
             }
-            // Right Diagonal (20 nodes)
+            // Rechte Diagonale
             for(let i=0; i<20; i++) {
                 targets.push({x: cx + (i/19)*R*0.707, y: cy + (i/19)*R*0.707});
             }
             return targets;
         }
 
-        const attractorNodes = createAttractorNodes();
-
-        class Boid {
-            constructor(
+        const attractorNodes = createAttractorNodes
+        
