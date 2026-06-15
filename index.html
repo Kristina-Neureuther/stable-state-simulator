@@ -52,32 +52,36 @@
         const canvas = document.getElementById('swarmCanvas');
         const ctx = canvas.getContext('2d');
 
-        const numBoids = 150;
+        // Deutlich mehr Punkte, damit das Herz auch massiv und ausgefüllt wirkt
+        const numBoids = 400; 
         const boids = [];
 
-        // 1. Die mathematischen Ziel-Punkte für das Herz berechnen
-        function createHeartNodes(count) {
+        // 1. Koordinaten für ein AUSGEFÜLLTES Herz berechnen
+        function createFilledHeartNodes(count) {
             const nodes = [];
             const cx = 850 / 2;
-            const cy = 500 / 2 - 20; // Etwas nach oben verschoben, damit es zentriert wirkt
-            const scale = 12; // Größe des Herzens
+            const cy = 500 / 2 - 20; 
+            const scale = 12; 
 
             for (let i = 0; i < count; i++) {
-                let t = (i / count) * Math.PI * 2;
+                // Zufälliger Punkt auf dem Umfang
+                let t = Math.random() * Math.PI * 2;
                 
-                // Klassische Herz-Gleichung
+                // Zufälliger Faktor für die Tiefe (Wurzel für gleichmäßige Füllung ohne Klumpen in der Mitte)
+                let fillFactor = Math.sqrt(Math.random());
+                
                 let x = 16 * Math.pow(Math.sin(t), 3);
                 let y = 13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t);
                 
                 nodes.push({
-                    x: cx + x * scale,
-                    y: cy - y * scale 
+                    x: cx + (x * fillFactor) * scale,
+                    y: cy - (y * fillFactor) * scale 
                 });
             }
             return nodes;
         }
 
-        const targets = createHeartNodes(numBoids);
+        const targets = createFilledHeartNodes(numBoids);
 
         // 2. Punkte (Boids) erstellen
         for (let i = 0; i < numBoids; i++) {
@@ -86,12 +90,11 @@
                 y: Math.random() * 500,
                 vx: (Math.random() - 0.5) * 4,
                 vy: (Math.random() - 0.5) * 4,
-                hue: Math.floor(Math.random() * 360), // Jeder Punkt ist bunt
-                target: targets[i] // Jeder Punkt merkt sich seinen festen Platz im Herz
+                hue: Math.floor(Math.random() * 360), 
+                target: targets[i] 
             });
         }
 
-        // Hilfsfunktion: Geschwindigkeitslimit
         function limitSpeed(p, max) {
             let speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
             if (speed > max && speed > 0) {
@@ -100,7 +103,6 @@
             }
         }
 
-        // Hilfsfunktion: An den Rändern abprallen
         function bounce(p) {
             if (p.x < 20) p.vx += 0.5;
             if (p.x > 830) p.vx -= 0.5;
@@ -112,7 +114,6 @@
 
         // 3. Animations-Schleife
         function animate() {
-            // Reines Schwarz, damit die Farben leuchten und nichts schmiert
             ctx.fillStyle = '#020203';
             ctx.fillRect(0, 0, 850, 500);
 
@@ -137,12 +138,11 @@
                         let other = boids[j];
                         let distSq = (p.x - other.x) * (p.x - other.x) + (p.y - other.y) * (p.y - other.y);
                         
-                        if (distSq < 3600) { // Sichtweite
+                        if (distSq < 3600) { 
                             cx += other.x; cy += other.y;
                             vx += other.vx; vy += other.vy;
                             count++;
                             
-                            // Platz machen (Kollisionen vermeiden)
                             if (distSq < 400) {
                                 p.vx += (p.x - other.x) * 0.01;
                                 p.vy += (p.y - other.y) * 0.01;
@@ -150,7 +150,6 @@
                         }
                     }
                     
-                    // Zusammenfinden und in die gleiche Richtung fliegen
                     if (count > 0) {
                         cx /= count; cy /= count; vx /= count; vy /= count;
                         p.vx += (cx - p.x) * 0.01;
@@ -161,25 +160,22 @@
                 } 
                 // === PHASE 3: DAS HERZ (Ab Frame 350) ===
                 else {
-                    // Feder-Physik: Zieht die Punkte exakt auf ihren Platz
                     let dx = p.target.x - p.x;
                     let dy = p.target.y - p.y;
                     
-                    p.vx += dx * 0.03; // Anziehungskraft
+                    p.vx += dx * 0.03; 
                     p.vy += dy * 0.03;
                     
-                    // Reibung: Bremst die Punkte ab, damit sie still stehen bleiben
                     p.vx *= 0.82; 
                     p.vy *= 0.82;
                 }
 
-                // Position aktualisieren
                 p.x += p.vx;
                 p.y += p.vy;
 
-                // Punkt zeichnen
                 ctx.beginPath();
-                ctx.arc(p.x, p.y, 3.5, 0, Math.PI * 2);
+                // Punkte etwas kleiner gemacht (2.5 statt 3.5), da es jetzt viel mehr sind
+                ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2);
                 ctx.fillStyle = `hsl(${p.hue}, 100%, 60%)`;
                 ctx.fill();
             }
