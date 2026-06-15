@@ -55,16 +55,17 @@
         const boids = [];
         const numBoids = 150;
 
-        // System Parameters for Stable Equilibrium
+        // System Parameters for Stable Equilibrium (Deutlich verlangsamt)
         const visualRange = 60;
-        const speedLimit = 2.5;
+        const speedLimit = 1.2; // Halbe Maximalgeschwindigkeit für elegante Bewegungen
 
         class Boid {
             constructor() {
                 this.x = Math.random() * canvas.width;
                 this.y = Math.random() * canvas.height;
-                this.dx = (Math.random() - 0.5) * 2;
-                this.dy = (Math.random() - 0.5) * 2;
+                // Sanfterer Start
+                this.dx = (Math.random() - 0.5) * 1; 
+                this.dy = (Math.random() - 0.5) * 1;
             }
 
             distance(other) {
@@ -119,7 +120,7 @@
             }
 
             keepWithinBounds() {
-                const margin = 50; const turnFactor = 0.1;
+                const margin = 50; const turnFactor = 0.05; // Weicheres Abprallen am Rand
                 if (this.x < margin) this.dx += turnFactor;
                 if (this.x > canvas.width - margin) this.dx -= turnFactor;
                 if (this.y < margin) this.dy += turnFactor;
@@ -137,24 +138,22 @@
             }
 
             draw() {
-                const angle = Math.atan2(this.dy, this.dx);
-                ctx.translate(this.x, this.y);
-                ctx.rotate(angle);
-                
-                // Color mapping based on position for a beautiful gradient effect
-                const hue = (this.x / canvas.width) * 60 + 180; // Blue to Cyan/Teal
+                // Farb-Verlauf basierend auf der Position (Blau zu Cyan/Teal)
+                const hue = (this.x / canvas.width) * 60 + 180; 
 
                 ctx.beginPath();
-                ctx.moveTo(6, 0);
-                ctx.lineTo(-4, 3);
-                ctx.lineTo(-4, -3);
-                ctx.closePath();
+                // Zeichnet perfekte Kreise (Punkte) statt Pfeile
+                ctx.arc(this.x, this.y, 2.5, 0, Math.PI * 2);
                 
+                // Sanftes Leuchten hinzufügen
                 ctx.fillStyle = `hsl(${hue}, 80%, 60%)`;
+                ctx.shadowBlur = 6;
+                ctx.shadowColor = `hsl(${hue}, 80%, 60%)`;
+                
                 ctx.fill();
                 
-                ctx.rotate(-angle);
-                ctx.translate(-this.x, -this.y);
+                // Schatten für den nächsten Frame zurücksetzen (wichtig für die Performance)
+                ctx.shadowBlur = 0;
             }
         }
 
@@ -164,8 +163,8 @@
         }
 
         function animate() {
-            // Elegant motion trail effect
-            ctx.fillStyle = 'rgba(2, 2, 3, 0.3)';
+            // Motion Trail Effekt: Macht die langsame Bewegung noch fließender
+            ctx.fillStyle = 'rgba(2, 2, 3, 0.2)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             for (let boid of boids) {
