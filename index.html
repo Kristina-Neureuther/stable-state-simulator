@@ -44,7 +44,7 @@
 <body>
 
     <h1>STABLE STATE SIMULATOR</h1>
-    <p>An exploration of Emergent Systems. The simulation transitions from high entropy (chaos) to a fluid macro-structure, ultimately converging into a globally recognized geometric attractor state.</p>
+    <p>An exploration of Emergent Systems. The simulation transitions from high entropy (chaos) to a fluid macro-structure, ultimately locking into a permanent geometric attractor state.</p>
     
     <canvas id="swarmCanvas" width="850" height="500"></canvas>
 
@@ -52,175 +52,136 @@
         const canvas = document.getElementById('swarmCanvas');
         const ctx = canvas.getContext('2d');
 
-        const boids = [];
         const numBoids = 150;
+        const boids = [];
 
-        const visualRange = 60;
-        const speedLimit = 2.0;
-
-        // Fehlerfreie, mathematisch sichere Herz-Berechnung
-        function createHeartNodes(numNodes) {
-            const targets = [];
+        // 1. Die mathematischen Ziel-Punkte für das Herz berechnen
+        function createHeartNodes(count) {
+            const nodes = [];
             const cx = 850 / 2;
-            const cy = 500 / 2 - 15; 
-            const scale = 11; 
+            const cy = 500 / 2 - 20; // Etwas nach oben verschoben, damit es zentriert wirkt
+            const scale = 12; // Größe des Herzens
 
-            for (let i = 0; i < numNodes; i++) {
-                let t = (i / numNodes) * Math.PI * 2;
-                let sinT = Math.sin(t);
+            for (let i = 0; i < count; i++) {
+                let t = (i / count) * Math.PI * 2;
                 
-                // Simpler und browser-kompatibler als Math.pow
-                let x = 16 * sinT * sinT * sinT;
+                // Klassische Herz-Gleichung
+                let x = 16 * Math.pow(Math.sin(t), 3);
                 let y = 13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t);
                 
-                targets.push({
+                nodes.push({
                     x: cx + x * scale,
                     y: cy - y * scale 
                 });
             }
-            return targets;
+            return nodes;
         }
 
-        const heartNodes = createHeartNodes(numBoids);
+        const targets = createHeartNodes(numBoids);
 
-        class Boid {
-            constructor(targetNode) {
-                this.x = Math.random() * 850;
-                this.y = Math.random() * 500;
-                this.dx = (Math.random() - 0.5) * 4; 
-                this.dy = (Math.random() - 0.5) * 4;
-                
-                this.hue = Math.floor(Math.random() * 360);
-                this.target = targetNode; 
-            }
-
-            distance(other) {
-                return Math.sqrt((this.x - other.x) ** 2 + (this.y - other.y) ** 2);
-            }
-
-            flyTowardsCenter(boids, swarmFactor) {
-                let centerX = 0; let centerY = 0; let numNeighbors = 0;
-                for (let other of boids) {
-                    if (this.distance(other) < visualRange) {
-                        centerX += other.x; centerY += other.y; numNeighbors += 1;
-                    }
-                }
-                if (numNeighbors) {
-                    centerX = centerX / numNeighbors; centerY = centerY / numNeighbors;
-                    this.dx += (centerX - this.x) * 0.005 * swarmFactor;
-                    this.dy += (centerY - this.y) * 0.005 * swarmFactor;
-                }
-            }
-
-            avoidOthers(boids) {
-                let moveX = 0; let moveY = 0;
-                for (let other of boids) {
-                    if (other !== this && this.distance(other) < 15) {
-                        moveX += this.x - other.x; moveY += this.y - other.y;
-                    }
-                }
-                this.dx += moveX * 0.05;
-                this.dy += moveY * 0.05;
-            }
-
-            matchVelocity(boids, swarmFactor) {
-                let avgDX = 0; let avgDY = 0; let numNeighbors = 0;
-                for (let other of boids) {
-                    if (this.distance(other) < visualRange) {
-                        avgDX += other.dx; avgDY += other.dy; numNeighbors += 1;
-                    }
-                }
-                if (numNeighbors) {
-                    avgDX = avgDX / numNeighbors; avgDY = avgDY / numNeighbors;
-                    this.dx += (avgDX - this.dx) * 0.05 * swarmFactor;
-                    this.dy += (avgDY - this.dy) * 0.05 * swarmFactor;
-                }
-            }
-
-            convergeToHeart(heartFactor) {
-                this.dx += (this.target.x - this.x) * 0.02 * heartFactor;
-                this.dy += (this.target.y - this.y) * 0.02 * heartFactor;
-            }
-
-            limitSpeed(heartFactor) {
-                const currentLimit = speedLimit - (heartFactor * 1.5);
-                const speed = Math.sqrt(this.dx * this.dx + this.dy * this.dy);
-                
-                // Failsafe: Verhindert Division durch Null
-                if (speed > currentLimit && currentLimit > 0 && speed !== 0) {
-                    this.dx = (this.dx / speed) * currentLimit;
-                    this.dy = (this.dy / speed) * currentLimit;
-                }
-            }
-
-            keepWithinBounds() {
-                const margin = 50; const turnFactor = 0.1; 
-                if (this.x < margin) this.dx += turnFactor;
-                if (this.x > 850 - margin) this.dx -= turnFactor;
-                if (this.y < margin) this.dy += turnFactor;
-                if (this.y > 500 - margin) this.dy -= turnFactor;
-            }
-
-            update(boids, swarmFactor, heartFactor) {
-                if (swarmFactor < 1 && heartFactor === 0) {
-                    this.dx += (Math.random() - 0.5) * 0.5 * (1 - swarmFactor);
-                    this.dy += (Math.random() - 0.5) * 0.5 * (1 - swarmFactor);
-                }
-
-                this.flyTowardsCenter(boids, swarmFactor);
-                this.avoidOthers(boids);
-                this.matchVelocity(boids, swarmFactor);
-                
-                if (heartFactor > 0) {
-                    this.convergeToHeart(heartFactor);
-                }
-
-                this.limitSpeed(heartFactor);
-                this.keepWithinBounds();
-                
-                // Absolute Sicherheit: Falls sich doch ein NaN einschleicht, wird der Punkt gerettet
-                if (isNaN(this.dx)) this.dx = 0;
-                if (isNaN(this.dy)) this.dy = 0;
-
-                this.x += this.dx;
-                this.y += this.dy;
-            }
-
-            draw() {
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, 3.5, 0, Math.PI * 2);
-                ctx.fillStyle = `hsl(${this.hue}, 100%, 60%)`;
-                ctx.fill();
-            }
-        }
-
-        // System initiieren
+        // 2. Punkte (Boids) erstellen
         for (let i = 0; i < numBoids; i++) {
-            boids.push(new Boid(heartNodes[i]));
+            boids.push({
+                x: Math.random() * 850,
+                y: Math.random() * 500,
+                vx: (Math.random() - 0.5) * 4,
+                vy: (Math.random() - 0.5) * 4,
+                hue: Math.floor(Math.random() * 360), // Jeder Punkt ist bunt
+                target: targets[i] // Jeder Punkt merkt sich seinen festen Platz im Herz
+            });
+        }
+
+        // Hilfsfunktion: Geschwindigkeitslimit
+        function limitSpeed(p, max) {
+            let speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+            if (speed > max && speed > 0) {
+                p.vx = (p.vx / speed) * max;
+                p.vy = (p.vy / speed) * max;
+            }
+        }
+
+        // Hilfsfunktion: An den Rändern abprallen
+        function bounce(p) {
+            if (p.x < 20) p.vx += 0.5;
+            if (p.x > 830) p.vx -= 0.5;
+            if (p.y < 20) p.vy += 0.5;
+            if (p.y > 480) p.vy -= 0.5;
         }
 
         let frameCount = 0;
 
+        // 3. Animations-Schleife
         function animate() {
+            // Reines Schwarz, damit die Farben leuchten und nichts schmiert
             ctx.fillStyle = '#020203';
             ctx.fillRect(0, 0, 850, 500);
 
             frameCount++;
 
-            let swarmFactor = 0;
-            let heartFactor = 0;
+            for (let i = 0; i < boids.length; i++) {
+                let p = boids[i];
 
-            if (frameCount > 150) {
-                swarmFactor = Math.min(1, (frameCount - 150) / 100);
-            }
-            if (frameCount > 350) {
-                heartFactor = Math.min(1, (frameCount - 350) / 150);
-                swarmFactor = Math.max(0, 1 - heartFactor);
-            }
+                // === PHASE 1: CHAOS (Frame 0 bis 150) ===
+                if (frameCount < 150) {
+                    p.vx += (Math.random() - 0.5) * 1;
+                    p.vy += (Math.random() - 0.5) * 1;
+                    limitSpeed(p, 3);
+                    bounce(p);
+                } 
+                // === PHASE 2: SCHWARM (Frame 150 bis 350) ===
+                else if (frameCount < 350) {
+                    let cx = 0, cy = 0, vx = 0, vy = 0, count = 0;
+                    
+                    for (let j = 0; j < boids.length; j++) {
+                        if (i === j) continue;
+                        let other = boids[j];
+                        let distSq = (p.x - other.x) * (p.x - other.x) + (p.y - other.y) * (p.y - other.y);
+                        
+                        if (distSq < 3600) { // Sichtweite
+                            cx += other.x; cy += other.y;
+                            vx += other.vx; vy += other.vy;
+                            count++;
+                            
+                            // Platz machen (Kollisionen vermeiden)
+                            if (distSq < 400) {
+                                p.vx += (p.x - other.x) * 0.01;
+                                p.vy += (p.y - other.y) * 0.01;
+                            }
+                        }
+                    }
+                    
+                    // Zusammenfinden und in die gleiche Richtung fliegen
+                    if (count > 0) {
+                        cx /= count; cy /= count; vx /= count; vy /= count;
+                        p.vx += (cx - p.x) * 0.01;
+                        p.vy += (vx - p.vx) * 0.05;
+                    }
+                    limitSpeed(p, 2.5);
+                    bounce(p);
+                } 
+                // === PHASE 3: DAS HERZ (Ab Frame 350) ===
+                else {
+                    // Feder-Physik: Zieht die Punkte exakt auf ihren Platz
+                    let dx = p.target.x - p.x;
+                    let dy = p.target.y - p.y;
+                    
+                    p.vx += dx * 0.03; // Anziehungskraft
+                    p.vy += dy * 0.03;
+                    
+                    // Reibung: Bremst die Punkte ab, damit sie still stehen bleiben
+                    p.vx *= 0.82; 
+                    p.vy *= 0.82;
+                }
 
-            for (let boid of boids) {
-                boid.update(boids, swarmFactor, heartFactor);
-                boid.draw();
+                // Position aktualisieren
+                p.x += p.vx;
+                p.y += p.vy;
+
+                // Punkt zeichnen
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 3.5, 0, Math.PI * 2);
+                ctx.fillStyle = `hsl(${p.hue}, 100%, 60%)`;
+                ctx.fill();
             }
 
             requestAnimationFrame(animate);
