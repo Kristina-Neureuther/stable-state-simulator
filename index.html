@@ -29,7 +29,7 @@
             margin-bottom: 30px; 
             font-size: 0.85em; 
             text-align: center; 
-            max-width: 650px;
+            max-width: 600px;
             line-height: 1.6;
             letter-spacing: 0.5px;
         }
@@ -44,80 +44,139 @@
 <body>
 
     <h1>STABLE STATE SIMULATOR</h1>
-    <p>An exploration of Directed Emergence. Autonomous agents utilize localized feedback loops to self-organize. Eventually, the systemic gravity pulls the swarm into a globally recognized geometric attractor state of equilibrium.</p>
+    <p>An exploration of Emergent Systems. Autonomous agents utilize localized feedback loops (alignment, cohesion, separation) to self-organize from chaos into a highly resilient, fluid macro-structure.</p>
     
-    <canvas id="c" width="850" height="500"></canvas>
+    <canvas id="swarmCanvas" width="850" height="500"></canvas>
 
     <script>
-        const canvas = document.getElementById('c');
+        const canvas = document.getElementById('swarmCanvas');
         const ctx = canvas.getContext('2d');
-        
-        // 1. Die Zielkoordinaten für das Peace-Zeichen berechnen
-        const targets = [];
-        const cx = 425; // Mitte von 850
-        const cy = 250; // Mitte von 500
-        const R = 130;  // Radius
 
-        // Kreis außen (60 Punkte)
-        for(let i=0; i<60; i++) {
-            targets.push({
-                x: cx + R * Math.cos((i/60) * Math.PI * 2), 
-                y: cy + R * Math.sin((i/60) * Math.PI * 2)
-            });
-        }
-        // Linie Mitte (25 Punkte)
-        for(let i=0; i<25; i++) {
-            targets.push({x: cx, y: cy - R + (i/24) * 2 * R});
-        }
-        // Diagonale links (15 Punkte)
-        for(let i=0; i<15; i++) {
-            targets.push({x: cx - (i/14) * R * 0.707, y: cy + (i/14) * R * 0.707});
-        }
-        // Diagonale rechts (15 Punkte)
-        for(let i=0; i<15; i++) {
-            targets.push({x: cx + (i/14) * R * 0.707, y: cy + (i/14) * R * 0.707});
-        }
-
-        // 2. Die fliegenden Punkte (Boids) erstellen
         const boids = [];
-        for(let i=0; i<targets.length; i++) {
-            boids.push({
-                x: Math.random() * 850,
-                y: Math.random() * 500,
-                vx: (Math.random() - 0.5) * 4,
-                vy: (Math.random() - 0.5) * 4,
-                tx: targets[i].x,  // Jeder Punkt merkt sich sein Ziel im Peace-Zeichen
-                ty: targets[i].y
-            });
-        }
+        const numBoids = 150;
 
-        let frame = 0;
+        // System Parameters for Stable Equilibrium
+        const visualRange = 60;
+        const speedLimit = 2.5;
 
-        // 3. Die Animations-Schleife
-        function draw() {
-            frame++;
-            
-            // Hintergrund mit leichtem Schweif-Effekt zeichnen
-            ctx.fillStyle = 'rgba(2, 2, 3, 0.3)';
-            ctx.fillRect(0, 0, 850, 500);
-
-            // Ab Frame 100 (ca. 2 Sekunden) fängt das Peace-Zeichen an zu ziehen
-            let force = 0;
-            if (frame > 100) {
-                force = (frame - 100) * 0.0002;
-                if (force > 0.03) force = 0.03; // Sogkraft begrenzen, damit es geschmeidig bleibt
+        class Boid {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.dx = (Math.random() - 0.5) * 2;
+                this.dy = (Math.random() - 0.5) * 2;
             }
 
-            ctx.fillStyle = '#00d2ff'; // Leuchtendes Cyan
+            distance(other) {
+                return Math.sqrt((this.x - other.x) ** 2 + (this.y - other.y) ** 2);
+            }
 
-            // Jeden Punkt bewegen und zeichnen
-            for(let i=0; i<boids.length; i++) {
-                let p = boids[i];
+            flyTowardsCenter(boids) {
+                let centerX = 0; let centerY = 0; let numNeighbors = 0;
+                for (let other of boids) {
+                    if (this.distance(other) < visualRange) {
+                        centerX += other.x; centerY += other.y; numNeighbors += 1;
+                    }
+                }
+                if (numNeighbors) {
+                    centerX = centerX / numNeighbors; centerY = centerY / numNeighbors;
+                    this.dx += (centerX - this.x) * 0.005;
+                    this.dy += (centerY - this.y) * 0.005;
+                }
+            }
 
-                if(force > 0) {
-                    // Zum Ziel ziehen
-                    p.vx += (p.tx - p.x) * force;
-                    p.vy += (p.ty - p.y) * force;
-                } else {
-                    // Freies Schwärmen am Anfang
-                    p.vx +=
+            avoidOthers(boids) {
+                let moveX = 0; let moveY = 0;
+                for (let other of boids) {
+                    if (other !== this && this.distance(other) < 20) {
+                        moveX += this.x - other.x; moveY += this.y - other.y;
+                    }
+                }
+                this.dx += moveX * 0.05;
+                this.dy += moveY * 0.05;
+            }
+
+            matchVelocity(boids) {
+                let avgDX = 0; let avgDY = 0; let numNeighbors = 0;
+                for (let other of boids) {
+                    if (this.distance(other) < visualRange) {
+                        avgDX += other.dx; avgDY += other.dy; numNeighbors += 1;
+                    }
+                }
+                if (numNeighbors) {
+                    avgDX = avgDX / numNeighbors; avgDY = avgDY / numNeighbors;
+                    this.dx += (avgDX - this.dx) * 0.05;
+                    this.dy += (avgDY - this.dy) * 0.05;
+                }
+            }
+
+            limitSpeed() {
+                const speed = Math.sqrt(this.dx * this.dx + this.dy * this.dy);
+                if (speed > speedLimit) {
+                    this.dx = (this.dx / speed) * speedLimit;
+                    this.dy = (this.dy / speed) * speedLimit;
+                }
+            }
+
+            keepWithinBounds() {
+                const margin = 50; const turnFactor = 0.1;
+                if (this.x < margin) this.dx += turnFactor;
+                if (this.x > canvas.width - margin) this.dx -= turnFactor;
+                if (this.y < margin) this.dy += turnFactor;
+                if (this.y > canvas.height - margin) this.dy -= turnFactor;
+            }
+
+            update(boids) {
+                this.flyTowardsCenter(boids);
+                this.avoidOthers(boids);
+                this.matchVelocity(boids);
+                this.limitSpeed();
+                this.keepWithinBounds();
+                this.x += this.dx;
+                this.y += this.dy;
+            }
+
+            draw() {
+                const angle = Math.atan2(this.dy, this.dx);
+                ctx.translate(this.x, this.y);
+                ctx.rotate(angle);
+                
+                // Color mapping based on position for a beautiful gradient effect
+                const hue = (this.x / canvas.width) * 60 + 180; // Blue to Cyan/Teal
+
+                ctx.beginPath();
+                ctx.moveTo(6, 0);
+                ctx.lineTo(-4, 3);
+                ctx.lineTo(-4, -3);
+                ctx.closePath();
+                
+                ctx.fillStyle = `hsl(${hue}, 80%, 60%)`;
+                ctx.fill();
+                
+                ctx.rotate(-angle);
+                ctx.translate(-this.x, -this.y);
+            }
+        }
+
+        // Initialize Swarm
+        for (let i = 0; i < numBoids; i++) {
+            boids.push(new Boid());
+        }
+
+        function animate() {
+            // Elegant motion trail effect
+            ctx.fillStyle = 'rgba(2, 2, 3, 0.3)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            for (let boid of boids) {
+                boid.update(boids);
+                boid.draw();
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+    </script>
+</body>
+</html>
