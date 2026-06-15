@@ -44,7 +44,7 @@
 <body>
 
     <h1>STABLE STATE SIMULATOR</h1>
-    <p>An exploration of Emergent Systems. Autonomous agents utilize localized feedback loops (alignment, cohesion, separation) to self-organize from chaos into a highly resilient, fluid macro-structure.</p>
+    <p>An exploration of Emergent Systems. The simulation begins in high entropy (chaos). Over time, localized feedback loops pull the autonomous agents into a highly resilient, fluid macro-structure.</p>
     
     <canvas id="swarmCanvas" width="850" height="500"></canvas>
 
@@ -56,15 +56,16 @@
         const numBoids = 150;
 
         const visualRange = 60;
-        const speedLimit = 1.2; // Schön langsame, ruhige Bewegung
+        const speedLimit = 1.5; 
 
         class Boid {
             constructor() {
                 this.x = Math.random() * canvas.width;
                 this.y = Math.random() * canvas.height;
-                this.dx = (Math.random() - 0.5) * 1; 
-                this.dy = (Math.random() - 0.5) * 1;
-                // Jeder Punkt bekommt eine eigene, zufällige Farbe aus dem vollen Spektrum
+                this.dx = (Math.random() - 0.5) * 3; 
+                this.dy = (Math.random() - 0.5) * 3;
+                
+                // Absolute Farbvielfalt: Jeder Punkt kriegt eine zufällige Farbe aus 360 Grad
                 this.hue = Math.floor(Math.random() * 360);
             }
 
@@ -72,101 +73,4 @@
                 return Math.sqrt((this.x - other.x) ** 2 + (this.y - other.y) ** 2);
             }
 
-            flyTowardsCenter(boids) {
-                let centerX = 0; let centerY = 0; let numNeighbors = 0;
-                for (let other of boids) {
-                    if (this.distance(other) < visualRange) {
-                        centerX += other.x; centerY += other.y; numNeighbors += 1;
-                    }
-                }
-                if (numNeighbors) {
-                    centerX = centerX / numNeighbors; centerY = centerY / numNeighbors;
-                    this.dx += (centerX - this.x) * 0.005;
-                    this.dy += (centerY - this.y) * 0.005;
-                }
-            }
-
-            avoidOthers(boids) {
-                let moveX = 0; let moveY = 0;
-                for (let other of boids) {
-                    if (other !== this && this.distance(other) < 20) {
-                        moveX += this.x - other.x; moveY += this.y - other.y;
-                    }
-                }
-                this.dx += moveX * 0.05;
-                this.dy += moveY * 0.05;
-            }
-
-            matchVelocity(boids) {
-                let avgDX = 0; let avgDY = 0; let numNeighbors = 0;
-                for (let other of boids) {
-                    if (this.distance(other) < visualRange) {
-                        avgDX += other.dx; avgDY += other.dy; numNeighbors += 1;
-                    }
-                }
-                if (numNeighbors) {
-                    avgDX = avgDX / numNeighbors; avgDY = avgDY / numNeighbors;
-                    this.dx += (avgDX - this.dx) * 0.05;
-                    this.dy += (avgDY - this.dy) * 0.05;
-                }
-            }
-
-            limitSpeed() {
-                const speed = Math.sqrt(this.dx * this.dx + this.dy * this.dy);
-                if (speed > speedLimit) {
-                    this.dx = (this.dx / speed) * speedLimit;
-                    this.dy = (this.dy / speed) * speedLimit;
-                }
-            }
-
-            keepWithinBounds() {
-                const margin = 50; const turnFactor = 0.05; 
-                if (this.x < margin) this.dx += turnFactor;
-                if (this.x > canvas.width - margin) this.dx -= turnFactor;
-                if (this.y < margin) this.dy += turnFactor;
-                if (this.y > canvas.height - margin) this.dy -= turnFactor;
-            }
-
-            update(boids) {
-                this.flyTowardsCenter(boids);
-                this.avoidOthers(boids);
-                this.matchVelocity(boids);
-                this.limitSpeed();
-                this.keepWithinBounds();
-                this.x += this.dx;
-                this.y += this.dy;
-            }
-
-            draw() {
-                ctx.beginPath();
-                // Zeichnet reine, perfekte Punkte (Kreise)
-                ctx.arc(this.x, this.y, 2.5, 0, Math.PI * 2);
-                
-                // Nutzt die individuelle, bunte Farbe des jeweiligen Punktes
-                ctx.fillStyle = `hsl(${this.hue}, 80%, 60%)`;
-                ctx.fill();
-            }
-        }
-
-        // Initialize Swarm
-        for (let i = 0; i < numBoids; i++) {
-            boids.push(new Boid());
-        }
-
-        function animate() {
-            // Hartes Überschreiben des Hintergrunds: Absolut kein Schweif mehr!
-            ctx.fillStyle = '#020203';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            for (let boid of boids) {
-                boid.update(boids);
-                boid.draw();
-            }
-
-            requestAnimationFrame(animate);
-        }
-
-        animate();
-    </script>
-</body>
-</html>
+            // Flocking-Regeln nehmen jetzt
