@@ -1,13 +1,13 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Stable State Simulator</title>
     <style>
         body {
-            background-color: #111;
-            color: #eee;
-            font-family: sans-serif;
+            background-color: #060608;
+            color: #f3f4f6;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -16,111 +16,113 @@
             margin: 0;
             overflow: hidden;
         }
-        h1 { margin-bottom: 5px; font-weight: 300; letter-spacing: 2px; }
-        p { color: #888; margin-bottom: 20px; font-size: 0.9em; text-align: center; max-width: 520px;}
+        h1 { 
+            margin-bottom: 5px; 
+            font-weight: 300; 
+            letter-spacing: 5px; 
+            font-size: 1.6em;
+            color: #ffffff;
+        }
+        p { 
+            color: #4b5563; 
+            margin-bottom: 30px; 
+            font-size: 0.85em; 
+            text-align: center; 
+            max-width: 550px;
+            line-height: 1.6;
+            letter-spacing: 0.5px;
+        }
         canvas {
-            border: 1px solid #333;
-            box-shadow: 0 0 20px rgba(255,255,255,0.05);
-            background: #000;
+            border: 1px solid rgba(255,255,255,0.03);
+            border-radius: 12px;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.7);
+            background: #010103;
         }
     </style>
 </head>
 <body>
 
     <h1>STABLE STATE SIMULATOR</h1>
-    <p>Ein zukunftsorientiertes Systems-Thinking-Modell. Diese Simulation zeigt, wie durch kontinuierlichen Werteaustausch, Synergien und kreative Kooperation ein lebendiges, stabiles Fließgleichgewicht entsteht.</p>
+    <p>A systemic design experiment. Isolated components drift in entropy. Through continuous interaction, proximity, and structural symbiosis, the network self-organizes into a resilient, dynamic equilibrium.</p>
     
-    <canvas id="artCanvas" width="600" height="400"></canvas>
+    <canvas id="stableCanvas" width="800" height="500"></canvas>
 
     <script>
-        const canvas = document.getElementById('artCanvas');
+        const canvas = document.getElementById('stableCanvas');
         const ctx = canvas.getContext('2d');
-        const resolution = 10;
-        const COLS = canvas.width / resolution;
-        const ROWS = canvas.height / resolution;
 
-        let grid = buildGrid();
+        const particles = [];
+        const numParticles = 120; // Schöne Balance zwischen Fülle und Eleganz
+        const connectionDist = 100; // Radius für Kooperation
 
-        function buildGrid() {
-            let arr = new Array(COLS).fill(null).map(() => new Array(ROWS).fill(null));
-            for (let col = 0; col < COLS; col++) {
-                for (let row = 0; row < ROWS; row++) {
-                    if (Math.random() > 0.7) {
-                        arr[col][row] = Math.floor(Math.random() * 360);
-                    } else {
-                        arr[col][row] = null;
-                    }
-                }
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.vx = (Math.random() - 0.5) * 1.5;
+                this.vy = (Math.random() - 0.5) * 1.5;
+                this.baseHue = Math.random() * 360;
+                this.hue = this.baseHue;
+                this.radius = 2 + Math.random() * 2;
+                this.synergy = 0; // Misst den Grad der Vernetzung
             }
-            return arr;
-        }
 
-        function update() {
-            let nextGrid = grid.map(arr => [...arr]);
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
 
-            for (let col = 0; col < COLS; col++) {
-                for (let row = 0; row < ROWS; row++) {
-                    const currentCell = grid[col][row];
-                    
-                    let neighbors = [];
-                    for (let i = -1; i < 2; i++) {
-                        for (let j = -1; j < 2; j++) {
-                            if (i === 0 && j === 0) continue;
-                            const x = (col + i + COLS) % COLS;
-                            const y = (row + j + ROWS) % ROWS;
-                            if (grid[x][y] !== null) {
-                                neighbors.push(grid[x][y]);
-                            }
-                        }
-                    }
+                // Sanftes Abprallen an den Rändern
+                if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
+                if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
 
-                    if (currentCell !== null) {
-                        if (neighbors.length === 0) {
-                            nextGrid[col][row] = null; 
-                        } else {
-                            let tolerance = 15; 
-                            let strictMatches = neighbors.filter(n => Math.abs(n - currentCell) < tolerance);
-                            
-                            if (strictMatches.length === neighbors.length && neighbors.length >= 3) {
-                                nextGrid[col][row] = null; // Impuls für Erneuerung
-                            } else {
-                                // Werteaustausch und Harmonisierung
-                                let sumHue = currentCell + neighbors.reduce((a, b) => a + b, 0);
-                                let avgHue = Math.floor(sumHue / (neighbors.length + 1));
-                                nextGrid[col][row] = avgHue % 360;
-                            }
-                        }
-                    } else {
-                        if (neighbors.length >= 2 && neighbors.length <= 4) {
-                            let sumHue = neighbors.reduce((a, b) => a + b, 0);
-                            nextGrid[col][row] = Math.floor(sumHue / neighbors.length) % 360;
-                        }
-                    }
-                }
+                // Zurücksetzen der Synergie für die Neuberechnung im Loop
+                this.synergy = 0;
             }
-            grid = nextGrid;
-        }
 
-        function render() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            for (let col = 0; col < COLS; col++) {
-                for (let row = 0; row < ROWS; row++) {
-                    const cell = grid[col][row];
-                    if (cell !== null) {
-                        ctx.fillStyle = `hsl(${cell}, 80%, 50%)`;
-                        ctx.fillRect(col * resolution, row * resolution, resolution - 1, resolution - 1);
-                    }
-                }
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius + (this.synergy * 2), 0, Math.PI * 2);
+                ctx.fillStyle = `hsl(${this.hue}, 90%, ${50 + this.synergy * 20}%)`;
+                ctx.fill();
             }
         }
 
-        function loop() {
-            update();
-            render();
-            setTimeout(loop, 100);
+        // System initialisieren
+        for (let i = 0; i < numParticles; i++) {
+            particles.push(new Particle());
         }
 
-        loop();
-    </script>
-</body>
-</html>
+        function simulateNetwork() {
+            // Hintergrund mit leichtem Alpha für fließende Bewegungsschweife (Motion Blur)
+            ctx.fillStyle = 'rgba(1, 1, 3, 0.2)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 1. Beziehungen berechnen (Symbiose-Schleife)
+            for (let i = 0; i < particles.length; i++) {
+                let p1 = particles[i];
+
+                for (let j = i + 1; j < particles.length; j++) {
+                    let p2 = particles[j];
+
+                    let dx = p1.x - p2.x;
+                    let dy = p1.y - p2.y;
+                    let dist = Math.sqrt(dx * dx + dy * dy);
+
+                    // Wenn Partikel nah beieinander sind, kooperieren sie
+                    if (dist < connectionDist) {
+                        p1.synergy += 0.05;
+                        p2.synergy += 0.05;
+
+                        // Werteaustausch: Farben gleichen sich mathematisch an
+                        let diff = p1.hue - p2.hue;
+                        if (Math.abs(diff) > 1) {
+                            p1.hue -= diff * 0.01;
+                            p2.hue += diff * 0.01;
+                        }
+
+                        // Zeichne die Netzwerk-Verbindung (Brücke)
+                        let alpha = (1 - dist / connectionDist) * 0.25;
+                        ctx.beginPath();
+                        ctx.moveTo(p1.x, p1.y);
+                        ctx.lineTo(p2.x, p2.y);
+                        ctx.strokeStyle = `hsla(${(p1.hue + p2.hue)/2}, 85%, 6
