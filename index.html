@@ -44,7 +44,7 @@
 <body>
 
     <h1>STABLE STATE SIMULATOR</h1>
-    <p>An exploration of Emergent Systems. The simulation transitions from high entropy (chaos) to a fluid macro-structure, ultimately converging into a globally recognized geometric attractor state.</p>
+    <p>An exploration of Emergent Systems. The simulation begins in high entropy (chaos). Over time, localized feedback loops pull the autonomous agents into a highly resilient, fluid macro-structure.</p>
     
     <canvas id="swarmCanvas" width="850" height="500"></canvas>
 
@@ -56,48 +56,24 @@
         const numBoids = 150;
 
         const visualRange = 60;
-        const speedLimit = 2.0;
-
-        // Die unsichtbare mathematische Matrix für das Herz generieren
-        function createHeartNodes(numNodes) {
-            const targets = [];
-            const cx = canvas.width / 2;
-            const cy = canvas.height / 2 - 15; // Leicht nach oben verschoben für bessere Optik
-            const scale = 11; // Größe des Herzens
-
-            for (let i = 0; i < numNodes; i++) {
-                // T läuft von 0 bis 2*Pi
-                let t = (i / numNodes) * Math.PI * 2;
-                
-                // Parametrische Gleichung für ein Herz
-                let x = 16 * Math.pow(Math.sin(t), 3);
-                let y = 13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t);
-                
-                targets.push({
-                    x: cx + x * scale,
-                    y: cy - y * scale // Minus, weil der Canvas auf der Y-Achse nach unten läuft
-                });
-            }
-            return targets;
-        }
-
-        const heartNodes = createHeartNodes(numBoids);
+        const speedLimit = 1.5; 
 
         class Boid {
-            constructor(targetNode) {
+            constructor() {
                 this.x = Math.random() * canvas.width;
                 this.y = Math.random() * canvas.height;
-                this.dx = (Math.random() - 0.5) * 4; 
-                this.dy = (Math.random() - 0.5) * 4;
+                this.dx = (Math.random() - 0.5) * 3; 
+                this.dy = (Math.random() - 0.5) * 3;
                 
+                // Absolute Farbvielfalt: Jeder Punkt kriegt eine zufällige Farbe aus 360 Grad
                 this.hue = Math.floor(Math.random() * 360);
-                this.target = targetNode; // Jeder Punkt kennt seinen Platz im Herz
             }
 
             distance(other) {
                 return Math.sqrt((this.x - other.x) ** 2 + (this.y - other.y) ** 2);
             }
 
+            // Flocking-Regeln nehmen jetzt den "swarmFactor" (0 bis 1) entgegen
             flyTowardsCenter(boids, swarmFactor) {
                 let centerX = 0; let centerY = 0; let numNeighbors = 0;
                 for (let other of boids) {
@@ -107,6 +83,7 @@
                 }
                 if (numNeighbors) {
                     centerX = centerX / numNeighbors; centerY = centerY / numNeighbors;
+                    // Die Anziehungskraft ist am Anfang 0 und steigt dann an
                     this.dx += (centerX - this.x) * 0.005 * swarmFactor;
                     this.dy += (centerY - this.y) * 0.005 * swarmFactor;
                 }
@@ -115,6 +92,7 @@
             avoidOthers(boids) {
                 let moveX = 0; let moveY = 0;
                 for (let other of boids) {
+                    // Ausweichen bleibt immer aktiv, damit sie nicht kollidieren
                     if (other !== this && this.distance(other) < 15) {
                         moveX += this.x - other.x; moveY += this.y - other.y;
                     }
@@ -124,4 +102,96 @@
             }
 
             matchVelocity(boids, swarmFactor) {
-                let avgDX = 0; let avgDY =
+                let avgDX = 0; let avgDY = 0; let numNeighbors = 0;
+                for (let other of boids) {
+                    if (this.distance(other) < visualRange) {
+                        avgDX += other.dx; avgDY += other.dy; numNeighbors += 1;
+                    }
+                }
+                if (numNeighbors) {
+                    avgDX = avgDX / numNeighbors; avgDY = avgDY / numNeighbors;
+                    // Die Schwarm-Ausrichtung ist am Anfang 0 und steigt dann an
+                    this.dx += (avgDX - this.dx) * 0.05 * swarmFactor;
+                    this.dy += (avgDY - this.dy) * 0.05 * swarmFactor;
+                }
+            }
+
+            limitSpeed() {
+                const speed = Math.sqrt(this.dx * this.dx + this.dy * this.dy);
+                if (speed > speedLimit) {
+                    this.dx = (this.dx / speed) * speedLimit;
+                    this.dy = (this.dy / speed) * speedLimit;
+                }
+            }
+
+            keepWithinBounds() {
+                const margin = 50; const turnFactor = 0.05; 
+                if (this.x < margin) this.dx += turnFactor;
+                if (this.x > canvas.width - margin) this.dx -= turnFactor;
+                if (this.y < margin) this.dy += turnFactor;
+                if (this.y > canvas.height - margin) this.dy -= turnFactor;
+            }
+
+            update(boids, swarmFactor) {
+                // In der Chaos-Phase (swarmFactor niedrig) fliegen sie wilder
+                if (swarmFactor < 1) {
+                    this.dx += (Math.random() - 0.5) * 0.5 * (1 - swarmFactor);
+                    this.dy += (Math.random() - 0.5) * 0.5 * (1 - swarmFactor);
+                }
+
+                this.flyTowardsCenter(boids, swarmFactor);
+                this.avoidOthers(boids);
+                this.matchVelocity(boids, swarmFactor);
+                
+                this.limitSpeed();
+                this.keepWithinBounds();
+                
+                this.x += this.dx;
+                this.y += this.dy;
+            }
+
+            draw() {
+                ctx.beginPath();
+                // Punkte leicht vergrößert, damit die bunten Farben besser wirken
+                ctx.arc(this.x, this.y, 3, 0, Math.PI * 2);
+                
+                // 100% Sättigung (knallig) und 60% Helligkeit (leuchtend)
+                ctx.fillStyle = `hsl(${this.hue}, 100%, 60%)`;
+                ctx.fill();
+            }
+        }
+
+        // System mit Punkten füllen
+        for (let i = 0; i < numBoids; i++) {
+            boids.push(new Boid());
+        }
+
+        let frameCount = 0;
+
+        function animate() {
+            // Hartes Überschreiben des Hintergrunds: Keine Schweife/Fische
+            ctx.fillStyle = '#020203';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            frameCount++;
+
+            // Der Schwarm-Faktor:
+            // Frame 0 bis 200 (ca. 3.5 Sekunden) = 0 (Absolutes Chaos)
+            // Frame 200 bis 300 = Steigt stufenlos auf 1 (Der Schwarm formt sich)
+            let swarmFactor = 0;
+            if (frameCount > 200) {
+                swarmFactor = Math.min(1, (frameCount - 200) / 100);
+            }
+
+            for (let boid of boids) {
+                boid.update(boids, swarmFactor);
+                boid.draw();
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+    </script>
+</body>
+</html>
