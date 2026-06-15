@@ -29,7 +29,7 @@
             margin-bottom: 30px; 
             font-size: 0.85em; 
             text-align: center; 
-            max-width: 600px;
+            max-width: 650px;
             line-height: 1.6;
             letter-spacing: 0.5px;
         }
@@ -44,7 +44,7 @@
 <body>
 
     <h1>STABLE STATE SIMULATOR</h1>
-    <p>An exploration of Emergent Systems. Autonomous agents utilize localized feedback loops (alignment, cohesion, separation) to self-organize from chaos into a highly resilient, fluid macro-structure.</p>
+    <p>An exploration of Directed Emergence. Autonomous agents utilize localized feedback loops to self-organize. Eventually, the systemic gravity pulls the swarm into a globally recognized geometric attractor state of equilibrium.</p>
     
     <canvas id="swarmCanvas" width="850" height="500"></canvas>
 
@@ -53,26 +53,41 @@
         const ctx = canvas.getContext('2d');
 
         const boids = [];
-        const numBoids = 150;
+        const numBoids = 150; 
+        let frameCount = 0;
 
-        // System Parameters for Stable Equilibrium
+        // System Parameters
         const visualRange = 60;
-        const speedLimit = 2.5;
+        const speedLimit = 2.0;
+
+        // Generate the invisible Attractor Matrix (Peace Sign Geometry)
+        function createAttractorNodes() {
+            const targets = [];
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+            const R = 130; 
+
+            // Outer Circle (80 nodes)
+            for(let i=0; i<80; i++) {
+                let a = (i/80) * Math.PI * 2;
+                targets.push({x: cx + R*Math.cos(a), y: cy + R*Math.sin(a)});
+            }
+            // Vertical Center Line (30 nodes)
+            for(let i=0; i<30; i++) {
+                targets.push({x: cx, y: cy - R + (i/29)*2*R});
+            }
+            // Left Diagonal (20 nodes)
+            for(let i=0; i<20; i++) {
+                targets.push({x: cx - (i/19)*R*0.707, y: cy + (i/19)*R*0.707});
+            }
+            // Right Diagonal (20 nodes)
+            for(let i=0; i<20; i++) {
+                targets.push({x: cx + (i/19)*R*0.707, y: cy + (i/19)*R*0.707});
+            }
+            return targets;
+        }
+
+        const attractorNodes = createAttractorNodes();
 
         class Boid {
-            constructor() {
-                this.x = Math.random() * canvas.width;
-                this.y = Math.random() * canvas.height;
-                this.dx = (Math.random() - 0.5) * 2;
-                this.dy = (Math.random() - 0.5) * 2;
-            }
-
-            distance(other) {
-                return Math.sqrt((this.x - other.x) ** 2 + (this.y - other.y) ** 2);
-            }
-
-            flyTowardsCenter(boids) {
-                let centerX = 0; let centerY = 0; let numNeighbors = 0;
-                for (let other of boids) {
-                    if (this.distance(other) < visualRange) {
-                        centerX += other.x; centerY +=
+            constructor(
