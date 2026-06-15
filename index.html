@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Stable State Simulator</title>
+    <style>
+        body {
+            background-color: #111;
+            color: #eee;
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+        h1 { margin-bottom: 5px; font-weight: 300; letter-spacing: 2px; }
+        p { color: #888; margin-bottom: 20px; font-size: 0.9em; text-align: center; max-width: 520px;}
+        canvas {
+            border: 1px solid #333;
+            box-shadow: 0 0 20px rgba(255,255,255,0.05);
+            background: #000;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>STABLE STATE SIMULATOR</h1>
+    <p>Ein zukunftsorientiertes Systems-Thinking-Modell. Diese Simulation zeigt, wie durch kontinuierlichen Werteaustausch, Synergien und kreative Kooperation ein lebendiges, stabiles Fließgleichgewicht entsteht.</p>
+    
+    <canvas id="artCanvas" width="600" height="400"></canvas>
+
+    <script>
+        const canvas = document.getElementById('artCanvas');
+        const ctx = canvas.getContext('2d');
+        const resolution = 10;
+        const COLS = canvas.width / resolution;
+        const ROWS = canvas.height / resolution;
+
+        let grid = buildGrid();
+
+        function buildGrid() {
+            let arr = new Array(COLS).fill(null).map(() => new Array(ROWS).fill(null));
+            for (let col = 0; col < COLS; col++) {
+                for (let row = 0; row < ROWS; row++) {
+                    if (Math.random() > 0.7) {
+                        arr[col][row] = Math.floor(Math.random() * 360);
+                    } else {
+                        arr[col][row] = null;
+                    }
+                }
+            }
+            return arr;
+        }
+
+        function update() {
+            let nextGrid = grid.map(arr => [...arr]);
+
+            for (let col = 0; col < COLS; col++) {
+                for (let row = 0; row < ROWS; row++) {
+                    const currentCell = grid[col][row];
+                    
+                    let neighbors = [];
+                    for (let i = -1; i < 2; i++) {
+                        for (let j = -1; j < 2; j++) {
+                            if (i === 0 && j === 0) continue;
+                            const x = (col + i + COLS) % COLS;
+                            const y = (row + j + ROWS) % ROWS;
+                            if (grid[x][y] !== null) {
+                                neighbors.push(grid[x][y]);
+                            }
+                        }
+                    }
+
+                    if (currentCell !== null) {
+                        if (neighbors.length === 0) {
+                            nextGrid[col][row] = null; 
+                        } else {
+                            let tolerance = 15; 
+                            let strictMatches = neighbors.filter(n => Math.abs(n - currentCell) < tolerance);
+                            
+                            if (strictMatches.length === neighbors.length && neighbors.length >= 3) {
+                                nextGrid[col][row] = null; // Impuls für Erneuerung
+                            } else {
+                                // Werteaustausch und Harmonisierung
+                                let sumHue = currentCell + neighbors.reduce((a, b) => a + b, 0);
+                                let avgHue = Math.floor(sumHue / (neighbors.length + 1));
+                                nextGrid[col][row] = avgHue % 360;
+                            }
+                        }
+                    } else {
+                        if (neighbors.length >= 2 && neighbors.length <= 4) {
+                            let sumHue = neighbors.reduce((a, b) => a + b, 0);
+                            nextGrid[col][row] = Math.floor(sumHue / neighbors.length) % 360;
+                        }
+                    }
+                }
+            }
+            grid = nextGrid;
+        }
+
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let col = 0; col < COLS; col++) {
+                for (let row = 0; row < ROWS; row++) {
+                    const cell = grid[col][row];
+                    if (cell !== null) {
+                        ctx.fillStyle = `hsl(${cell}, 80%, 50%)`;
+                        ctx.fillRect(col * resolution, row * resolution, resolution - 1, resolution - 1);
+                    }
+                }
+            }
+        }
+
+        function loop() {
+            update();
+            render();
+            setTimeout(loop, 100);
+        }
+
+        loop();
+    </script>
+</body>
+</html>
