@@ -5,7 +5,7 @@
     <title>Stable State Simulator</title>
     <style>
         body {
-            background-color: #060608;
+            background-color: #08080a;
             color: #f3f4f6;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             display: flex;
@@ -24,7 +24,7 @@
             color: #ffffff;
         }
         p { 
-            color: #4b5563; 
+            color: #52525b; 
             margin-bottom: 30px; 
             font-size: 0.85em; 
             text-align: center; 
@@ -35,15 +35,15 @@
         canvas {
             border: 1px solid rgba(255,255,255,0.03);
             border-radius: 12px;
-            box-shadow: 0 30px 60px rgba(0,0,0,0.7);
-            background: #010103;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.6);
+            background: #010102;
         }
     </style>
 </head>
 <body>
 
     <h1>STABLE STATE SIMULATOR</h1>
-    <p>A systemic design experiment. Isolated components drift in entropy. Through continuous interaction, proximity, and structural symbiosis, the network self-organizes into a resilient, dynamic equilibrium.</p>
+    <p>A systemic design model. Isolated components drift in high entropy. Through continuous interaction, proximity, and structural symbiosis, the network self-organizes into a resilient, dynamic equilibrium.</p>
     
     <canvas id="stableCanvas" width="800" height="500"></canvas>
 
@@ -52,52 +52,49 @@
         const ctx = canvas.getContext('2d');
 
         const particles = [];
-        const numParticles = 120; // Schöne Balance zwischen Fülle und Eleganz
-        const connectionDist = 100; // Radius für Kooperation
+        const numParticles = 90; // Weniger Punkte für ein ruhigeres Gesamtbild
+        const connectionDist = 110; 
 
         class Particle {
             constructor() {
                 this.x = Math.random() * canvas.width;
                 this.y = Math.random() * canvas.height;
-                this.vx = (Math.random() - 0.5) * 1.5;
-                this.vy = (Math.random() - 0.5) * 1.5;
+                // Extrem verlangsamte Bewegung für einen eleganten Fluss (Zeitlupe)
+                this.vx = (Math.random() - 0.5) * 0.4;
+                this.vy = (Math.random() - 0.5) * 0.4;
                 this.baseHue = Math.random() * 360;
                 this.hue = this.baseHue;
-                this.radius = 2 + Math.random() * 2;
-                this.synergy = 0; // Misst den Grad der Vernetzung
+                this.radius = 2.5;
+                this.synergy = 0; 
             }
 
             update() {
                 this.x += this.vx;
                 this.y += this.vy;
 
-                // Sanftes Abprallen an den Rändern
                 if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
                 if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
 
-                // Zurücksetzen der Synergie für die Neuberechnung im Loop
                 this.synergy = 0;
             }
 
             draw() {
                 ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius + (this.synergy * 2), 0, Math.PI * 2);
-                ctx.fillStyle = `hsl(${this.hue}, 90%, ${50 + this.synergy * 20}%)`;
+                ctx.arc(this.x, this.y, this.radius + (this.synergy * 1.5), 0, Math.PI * 2);
+                ctx.fillStyle = `hsl(${this.hue}, 85%, 60%)`;
                 ctx.fill();
             }
         }
 
-        // System initialisieren
         for (let i = 0; i < numParticles; i++) {
             particles.push(new Particle());
         }
 
         function simulateNetwork() {
-            // Hintergrund mit leichtem Alpha für fließende Bewegungsschweife (Motion Blur)
-            ctx.fillStyle = 'rgba(1, 1, 3, 0.2)';
+            // Solides Löschen des Hintergrunds verhindert jegliches Hektik-Flackern
+            ctx.fillStyle = '#010102';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // 1. Beziehungen berechnen (Symbiose-Schleife)
             for (let i = 0; i < particles.length; i++) {
                 let p1 = particles[i];
 
@@ -105,24 +102,3 @@
                     let p2 = particles[j];
 
                     let dx = p1.x - p2.x;
-                    let dy = p1.y - p2.y;
-                    let dist = Math.sqrt(dx * dx + dy * dy);
-
-                    // Wenn Partikel nah beieinander sind, kooperieren sie
-                    if (dist < connectionDist) {
-                        p1.synergy += 0.05;
-                        p2.synergy += 0.05;
-
-                        // Werteaustausch: Farben gleichen sich mathematisch an
-                        let diff = p1.hue - p2.hue;
-                        if (Math.abs(diff) > 1) {
-                            p1.hue -= diff * 0.01;
-                            p2.hue += diff * 0.01;
-                        }
-
-                        // Zeichne die Netzwerk-Verbindung (Brücke)
-                        let alpha = (1 - dist / connectionDist) * 0.25;
-                        ctx.beginPath();
-                        ctx.moveTo(p1.x, p1.y);
-                        ctx.lineTo(p2.x, p2.y);
-                        ctx.strokeStyle = `hsla(${(p1.hue + p2.hue)/2}, 85%, 6
