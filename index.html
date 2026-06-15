@@ -64,6 +64,8 @@
                 this.y = Math.random() * canvas.height;
                 this.dx = (Math.random() - 0.5) * 1; 
                 this.dy = (Math.random() - 0.5) * 1;
+                // Jeder Punkt bekommt eine eigene, zufällige Farbe aus dem vollen Spektrum
+                this.hue = Math.floor(Math.random() * 360);
             }
 
             distance(other) {
@@ -136,13 +138,12 @@
             }
 
             draw() {
-                const hue = (this.x / canvas.width) * 60 + 180; 
-
                 ctx.beginPath();
-                // Zeichnet reine, perfekte Punkte
+                // Zeichnet reine, perfekte Punkte (Kreise)
                 ctx.arc(this.x, this.y, 2.5, 0, Math.PI * 2);
                 
-                ctx.fillStyle = `hsl(${hue}, 80%, 60%)`;
+                // Nutzt die individuelle, bunte Farbe des jeweiligen Punktes
+                ctx.fillStyle = `hsl(${this.hue}, 80%, 60%)`;
                 ctx.fill();
             }
         }
@@ -153,7 +154,7 @@
         }
 
         function animate() {
-            // Solides Überschreiben des Hintergrunds: Verhindert jeglichen Schweif/Spermien-Effekt
+            // Hartes Überschreiben des Hintergrunds: Absolut kein Schweif mehr!
             ctx.fillStyle = '#020203';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
