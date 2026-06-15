@@ -44,7 +44,7 @@
 <body>
 
     <h1>STABLE STATE SIMULATOR</h1>
-    <p>An exploration of Emergent Systems. The simulation begins in high entropy (chaos). Over time, localized feedback loops pull the autonomous agents into a highly resilient, fluid macro-structure.</p>
+    <p>An exploration of Emergent Systems. The simulation transitions from high entropy (chaos) to a fluid macro-structure, ultimately converging into a globally recognized geometric attractor state.</p>
     
     <canvas id="swarmCanvas" width="850" height="500"></canvas>
 
@@ -56,21 +56,72 @@
         const numBoids = 150;
 
         const visualRange = 60;
-        const speedLimit = 1.5; 
+        const speedLimit = 2.0;
+
+        // Die unsichtbare mathematische Matrix für das Herz generieren
+        function createHeartNodes(numNodes) {
+            const targets = [];
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2 - 15; // Leicht nach oben verschoben für bessere Optik
+            const scale = 11; // Größe des Herzens
+
+            for (let i = 0; i < numNodes; i++) {
+                // T läuft von 0 bis 2*Pi
+                let t = (i / numNodes) * Math.PI * 2;
+                
+                // Parametrische Gleichung für ein Herz
+                let x = 16 * Math.pow(Math.sin(t), 3);
+                let y = 13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t);
+                
+                targets.push({
+                    x: cx + x * scale,
+                    y: cy - y * scale // Minus, weil der Canvas auf der Y-Achse nach unten läuft
+                });
+            }
+            return targets;
+        }
+
+        const heartNodes = createHeartNodes(numBoids);
 
         class Boid {
-            constructor() {
+            constructor(targetNode) {
                 this.x = Math.random() * canvas.width;
                 this.y = Math.random() * canvas.height;
-                this.dx = (Math.random() - 0.5) * 3; 
-                this.dy = (Math.random() - 0.5) * 3;
+                this.dx = (Math.random() - 0.5) * 4; 
+                this.dy = (Math.random() - 0.5) * 4;
                 
-                // Absolute Farbvielfalt: Jeder Punkt kriegt eine zufällige Farbe aus 360 Grad
                 this.hue = Math.floor(Math.random() * 360);
+                this.target = targetNode; // Jeder Punkt kennt seinen Platz im Herz
             }
 
             distance(other) {
                 return Math.sqrt((this.x - other.x) ** 2 + (this.y - other.y) ** 2);
             }
 
-            // Flocking-Regeln nehmen jetzt
+            flyTowardsCenter(boids, swarmFactor) {
+                let centerX = 0; let centerY = 0; let numNeighbors = 0;
+                for (let other of boids) {
+                    if (this.distance(other) < visualRange) {
+                        centerX += other.x; centerY += other.y; numNeighbors += 1;
+                    }
+                }
+                if (numNeighbors) {
+                    centerX = centerX / numNeighbors; centerY = centerY / numNeighbors;
+                    this.dx += (centerX - this.x) * 0.005 * swarmFactor;
+                    this.dy += (centerY - this.y) * 0.005 * swarmFactor;
+                }
+            }
+
+            avoidOthers(boids) {
+                let moveX = 0; let moveY = 0;
+                for (let other of boids) {
+                    if (other !== this && this.distance(other) < 15) {
+                        moveX += this.x - other.x; moveY += this.y - other.y;
+                    }
+                }
+                this.dx += moveX * 0.05;
+                this.dy += moveY * 0.05;
+            }
+
+            matchVelocity(boids, swarmFactor) {
+                let avgDX = 0; let avgDY =
