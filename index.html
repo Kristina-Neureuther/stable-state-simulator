@@ -52,19 +52,19 @@
         const ctx = canvas.getContext('2d');
 
         const particles = [];
-        const numParticles = 90; // Weniger Punkte für ein ruhigeres Gesamtbild
-        const connectionDist = 110; 
+        const numParticles = 80; 
+        const connectionDist = 120; 
 
         class Particle {
             constructor() {
                 this.x = Math.random() * canvas.width;
                 this.y = Math.random() * canvas.height;
-                // Extrem verlangsamte Bewegung für einen eleganten Fluss (Zeitlupe)
-                this.vx = (Math.random() - 0.5) * 0.4;
-                this.vy = (Math.random() - 0.5) * 0.4;
-                this.baseHue = Math.random() * 360;
+                // Elegant slow motion vector movement
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = (Math.random() - 0.5) * 0.5;
+                this.baseHue = Math.floor(Math.random() * 360);
                 this.hue = this.baseHue;
-                this.radius = 2.5;
+                this.radius = 3;
                 this.synergy = 0; 
             }
 
@@ -80,8 +80,8 @@
 
             draw() {
                 ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius + (this.synergy * 1.5), 0, Math.PI * 2);
-                ctx.fillStyle = `hsl(${this.hue}, 85%, 60%)`;
+                ctx.arc(this.x, this.y, this.radius + (this.synergy * 2), 0, Math.PI * 2);
+                ctx.fillStyle = `hsl(${Math.floor(this.hue)}, 85%, 60%)`;
                 ctx.fill();
             }
         }
@@ -91,10 +91,16 @@
         }
 
         function simulateNetwork() {
-            // Solides Löschen des Hintergrunds verhindert jegliches Hektik-Flackern
+            // Clean canvas wipe to prevent any flickering or stuttering
             ctx.fillStyle = '#010102';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+            // Process system nodes
+            for (let i = 0; i < particles.length; i++) {
+                particles[i].update();
+            }
+
+            // Calculate systemic connections and network synchronization
             for (let i = 0; i < particles.length; i++) {
                 let p1 = particles[i];
 
@@ -102,3 +108,21 @@
                     let p2 = particles[j];
 
                     let dx = p1.x - p2.x;
+                    let dy = p1.y - p2.y;
+                    let dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist < connectionDist) {
+                        p1.synergy += 0.05;
+                        p2.synergy += 0.05;
+
+                        // Smooth harmonic color shifting toward mutual equilibrium
+                        let diff = p1.hue - p2.hue;
+                        p1.hue = (p1.hue - diff * 0.01 + 360) % 360;
+                        p2.hue = (p2.hue + diff * 0.01 + 360) % 360;
+
+                        // Visual symbiotic connection line
+                        let alpha = (1 - dist / connectionDist) * 0.25;
+                        ctx.beginPath();
+                        ctx.moveTo(p1.x, p1.y);
+                        ctx.lineTo(p
+                                   
