@@ -1,4 +1,4 @@
-# stable-state-simulator
+# stable-state
 
 
 A highly visual systems-thinking engine demonstrating **Emergent Collective Behavior**. 
