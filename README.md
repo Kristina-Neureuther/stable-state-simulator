@@ -5,7 +5,9 @@ A highly visual systems-thinking engine demonstrating **Emergent Collective Beha
 
 This interactive simulation models how decentralized, autonomous agents bypass chaotic entropy to form a highly resilient, fluid macro-structure—without any centralized control or top-down leadership.
 
-## System Architecture: The Rules of Emergence
+## Kristina Neureuther – Systems Thinking & Strategy
+
+### System Architecture: The Rules of Emergence
 
 In complex systems, macro-level stability cannot be hardcoded; it must emerge from micro-level interactions. This engine utilizes three localized feedback loops to achieve a steady state:
 
